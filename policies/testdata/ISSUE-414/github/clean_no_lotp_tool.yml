@@ -1,0 +1,12 @@
+# CLEAN: pull_request_target checks out the PR head, but the only run step is
+# an inert echo — no LOTP tool processes the untrusted code.
+name: PR Label
+on: pull_request_target
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: echo "pull request labelled"

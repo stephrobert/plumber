@@ -129,6 +129,8 @@ const (
 	CodePullRequestTargetWithHeadCheckout ErrorCode = "ISSUE-804"
 	// ISSUE-417: Required action or reusable workflow is not referenced anywhere in the project's workflows
 	CodeRequiredActionMissing ErrorCode = "ISSUE-417"
+	// ISSUE-414: An RCE-by-design developer tool (LOTP catalog) runs on untrusted code
+	CodeLotpUntrustedCode ErrorCode = "ISSUE-414"
 )
 
 // Issue codes for workflow-hygiene controls (6xx)
@@ -741,6 +743,15 @@ var errorCodeRegistry = map[ErrorCode]ErrorCodeInfo{
 		Remediation: "Add a `uses: <owner>/<repo>[@<ref>]` step that references the required action, or a `jobs.<name>.uses: <owner>/<repo>/.github/workflows/<file>.yml@<ref>` job that calls the required reusable workflow. The exact path declared in `.plumber.yaml` under `workflowMustIncludeRequiredActions` is matched ref-agnostically, so any pinned ref works.",
 		DocURL:      docsBaseURL + string(CodeRequiredActionMissing),
 		ControlName: "workflowMustIncludeRequiredActions",
+	},
+	CodeLotpUntrustedCode: {
+		Code:        CodeLotpUntrustedCode,
+		Severity:    SeverityCritical,
+		Title:       "RCE-by-design developer tool runs on untrusted code",
+		Description: "A job runs a developer CLI with RCE-by-design behaviour — catalogued by the open-source Living Off The Pipeline (LOTP) project — on untrusted code. Tools such as eslint, npm, make, gradle, pip or pytest execute attacker-controlled repository files when they run: eslint loads eslint.config.js, npm runs package.json lifecycle scripts, make runs the Makefile, pip runs setup.py, pytest loads conftest.py. When the job is reachable from a privileged trigger (pull_request_target, workflow_run) and checks out the pull-request head, the tool processes a fork's code with the base repository's secrets in scope — a direct path to secret exfiltration and arbitrary code execution. The tool is flagged only when it runs after the untrusted checkout in the same job.",
+		Remediation: "Do not run developer tools on fork-controlled code under a privileged trigger. Prefer the standard `pull_request` event, which runs in the fork's context with no base-repo secrets. If `pull_request_target` is required, keep the job to non-secret metadata steps and never check out the PR head — or split the work: a `pull_request_target` job gathers metadata, then a separate `pull_request` job runs the tooling on the fork code without secrets.",
+		DocURL:      docsBaseURL + string(CodeLotpUntrustedCode),
+		ControlName: "pipelineMustNotRunRceToolsOnUntrustedCode",
 	},
 	CodeExcessivePermissions: {
 		Code:        CodeExcessivePermissions,

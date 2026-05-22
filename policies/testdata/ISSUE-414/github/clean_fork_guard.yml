@@ -1,0 +1,17 @@
+# CLEAN: an `if:` guard restricts the job to same-repository pull requests
+# (the Svelte pattern), so a fork's code never runs — npm only ever processes
+# trusted base-repo code. A control that ignores the guard false-positives
+# here; this fixture pins that regression.
+name: PR Build
+on: pull_request_target
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name != 'pull_request_target' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: npm install && npm test

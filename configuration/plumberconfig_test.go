@@ -313,7 +313,6 @@ controls: {}
 	}
 }
 
-
 func TestValidControlNames(t *testing.T) {
 	names := ValidControlNames()
 
@@ -332,6 +331,7 @@ func TestValidControlNames(t *testing.T) {
 		"pipelineMustNotExecuteUnverifiedScripts",
 		"pipelineMustNotIncludeHardcodedJobs",
 		"pipelineMustNotOverrideJobVariables",
+		"pipelineMustNotRunRceToolsOnUntrustedCode",
 		"pipelineMustNotUseDockerInDocker",
 		"pipelineMustNotUseUnsafeVariableExpansion",
 		"reusableWorkflowsMustNotInheritSecrets",

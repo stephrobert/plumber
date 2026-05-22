@@ -1,0 +1,16 @@
+# CLEAN: npm ci runs BEFORE the PR head is checked out — it processes the
+# trusted base-repo code. This is the case that requires inter-step taint:
+# a job-level check that merely sees "pull_request_target + checkout head +
+# npm" would false-positive here.
+name: PR Build
+on: pull_request_target
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: echo "head checked out"

@@ -61,6 +61,7 @@ var controlsMeta = map[string]ControlMeta{
 	"deployJobsMustUseEnvironmentGate":                    {Providers: []string{ProviderGitHub}},
 	"dockerfilesMustPinBaseImageByDigest":                 {Providers: []string{ProviderGitHub}},
 	"githubAppTokensMustBeRevokedOnExit":                  {Providers: []string{ProviderGitHub}},
+	"pipelineMustNotRunRceToolsOnUntrustedCode":           {Providers: []string{ProviderGitHub}},
 	"publishWorkflowsMustUseOidcTrustedPublishing":        {Providers: []string{ProviderGitHub}},
 	"pullRequestTargetMustNotCheckoutHead":                {Providers: []string{ProviderGitHub}},
 	"releaseWorkflowsMustNotRestoreUntrustedCache":        {Providers: []string{ProviderGitHub}},
@@ -157,6 +158,10 @@ var benchedControls = map[string]map[string]struct{}{
 		"workflowMustPinPackageInstalls":                  {},
 		"workflowsMustDeclareConcurrency":                 {},
 		"workflowsMustHaveExplicitName":                   {},
+
+		// LOTP catalog control — new; GitLab side and output wiring
+		// still pending (issue #189).
+		"pipelineMustNotRunRceToolsOnUntrustedCode": {},
 
 		// Cross-provider controls whose GitHub side needs collector
 		// or test work before it ships. They continue to fire

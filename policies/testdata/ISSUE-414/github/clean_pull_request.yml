@@ -1,0 +1,10 @@
+# CLEAN: plain pull_request runs in the fork's context with no base-repo
+# secrets — running a LOTP tool on the PR code carries no secret-exfil risk.
+name: PR Lint
+on: pull_request
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npx eslint .

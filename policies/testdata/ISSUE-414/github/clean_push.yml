@@ -1,0 +1,10 @@
+# CLEAN: push trigger — the code is always trusted (a contributor with push
+# access), so running gradle on its build script is expected.
+name: CI
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: gradle build

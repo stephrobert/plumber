@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/getplumber/plumber/internal/ir"
+	"github.com/getplumber/plumber/internal/lotp"
 )
 
 const githubWorkflowsSubdir = ".github/workflows"
@@ -403,6 +404,10 @@ func parseGitHubWorkflowJobs(data []byte, namespace, originFile string) ([]ir.Jo
 	if len(wf.Jobs) == 0 {
 		return nil, nil
 	}
+	lotpMatcher, err := lotp.DefaultMatcher()
+	if err != nil {
+		return nil, fmt.Errorf("load lotp catalog: %w", err)
+	}
 
 	workflowPerms := normalizeGitHubPermissions(wf.Permissions)
 	workflowEnv := normalizeGitHubEnv(wf.Env)
@@ -494,6 +499,9 @@ func parseGitHubWorkflowJobs(data []byte, namespace, originFile string) ([]ir.Jo
 				}
 			}
 			job.Uses = uses
+		}
+		if steps := extractGitHubSteps(section["steps"], lotpMatcher); len(steps) > 0 {
+			job.Steps = steps
 		}
 		if jobUses, ok := section["uses"].(string); ok && jobUses != "" {
 			job.ReusableWorkflowUses = jobUses
@@ -698,6 +706,44 @@ func extractGitHubUses(v any) []ir.Action {
 			action.With = withMap
 		}
 		out = append(out, action)
+	}
+	return out
+}
+
+// extractGitHubSteps walks `jobs.<name>.steps[]` and returns every step in
+// source order. Unlike extractGitHubUses / extractGitHubRunScripts, it keeps
+// `uses:` and `run:` steps interleaved so taint-style policies can tell what
+// runs after an untrusted checkout. Each `run:` step is tagged with the LOTP
+// catalog tools its script invokes.
+func extractGitHubSteps(v any, matcher *lotp.Matcher) []ir.Step {
+	stepsList, ok := v.([]any)
+	if !ok {
+		return nil
+	}
+	out := make([]ir.Step, 0, len(stepsList))
+	for _, s := range stepsList {
+		stepMap, ok := ghCastStringMap(s)
+		if !ok {
+			continue
+		}
+		if uses, ok := stepMap["uses"].(string); ok && uses != "" {
+			step := ir.Step{Kind: ir.StepKindUses, Uses: uses}
+			if withMap, ok := ghCastStringMap(stepMap["with"]); ok {
+				step.With = withMap
+			}
+			out = append(out, step)
+			continue
+		}
+		if run, ok := stepMap["run"].(string); ok && run != "" {
+			step := ir.Step{Kind: ir.StepKindRun, Run: run}
+			if matcher != nil {
+				step.LotpTools = matcher.ToolNamesIn(run)
+			}
+			out = append(out, step)
+		}
+	}
+	if len(out) == 0 {
+		return nil
 	}
 	return out
 }

@@ -1,0 +1,17 @@
+# VIOLATION: workflow_run checks out the triggering run's head, then runs make —
+# the fork's Makefile executes shell with the base repo's secrets in scope.
+name: Post CI
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - run: make build

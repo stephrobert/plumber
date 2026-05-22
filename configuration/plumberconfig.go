@@ -84,6 +84,9 @@ var validControlSchema = map[string][]string{
 	"workflowMustIncludeRequiredActions": {
 		"enabled", "required", "requiredGroups",
 	},
+	"pipelineMustNotRunRceToolsOnUntrustedCode": {
+		"enabled",
+	},
 }
 
 // validControlKeys returns the list of known control names.
@@ -282,6 +285,12 @@ type ControlsConfig struct {
 	// `org/sast-scan` matches `uses: org/sast-scan@v2`,
 	// `uses: org/sast-scan@abc123`, and `uses: org/sast-scan/sub@v1`.
 	WorkflowMustIncludeRequiredActions *RequiredActionsControlConfig `yaml:"workflowMustIncludeRequiredActions,omitempty"`
+
+	// PipelineMustNotRunRceToolsOnUntrustedCode flags a Living Off The
+	// Pipeline tool (eslint, npm, make, ...) run on untrusted code under a
+	// privileged trigger. Applies to GitHub Actions today; GitLab support
+	// is tracked separately.
+	PipelineMustNotRunRceToolsOnUntrustedCode *EnabledOnlyControlConfig `yaml:"pipelineMustNotRunRceToolsOnUntrustedCode,omitempty"`
 }
 
 // EnabledOnlyControlConfig is the shape used for controls that have no

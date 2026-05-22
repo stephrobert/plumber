@@ -1,0 +1,14 @@
+# VIOLATION: pull_request_target checks out the PR head, then runs eslint —
+# the fork's eslint.config.js executes with the base repo's secrets in scope.
+name: PR Lint
+on: pull_request_target
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: npx eslint .

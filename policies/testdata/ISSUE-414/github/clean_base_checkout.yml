@@ -1,0 +1,10 @@
+# CLEAN: pull_request_target with a default checkout (no ref:) — the job runs
+# the trusted base-repo code, so make executes a trusted Makefile.
+name: PR Meta
+on: pull_request_target
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make metadata

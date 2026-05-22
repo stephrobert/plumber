@@ -3595,3 +3595,83 @@ func TestIssue416_RequiredActionMissing(t *testing.T) {
 		}
 	})
 }
+
+// TestLotpUntrustedCode drives the lotp_untrusted_code policy (ISSUE-414): a
+// job that checks out the PR head under a privileged trigger and then runs a
+// Living Off The Pipeline catalog tool must be flagged. The clean fixtures —
+// plain pull_request, no LOTP tool, base checkout, push, and a tool invoked
+// before the head checkout — must all stay silent. It uses the real
+// production collector so the ordered Steps + LOTP tagging carried on the IR
+// are exercised end to end.
+func TestLotpUntrustedCode(t *testing.T) {
+	cases := []struct {
+		fixture      string
+		expectedHits []string
+	}{
+		{
+			fixture:      "violation_eslint_pr_target.yml",
+			expectedHits: []string{"violation_eslint_pr_target/lint"},
+		},
+		{
+			fixture:      "violation_make_workflow_run.yml",
+			expectedHits: []string{"violation_make_workflow_run/build"},
+		},
+		{
+			fixture:      "violation_npm_pr_target.yml",
+			expectedHits: []string{"violation_npm_pr_target/test"},
+		},
+		{fixture: "clean_pull_request.yml", expectedHits: nil},
+		{fixture: "clean_no_lotp_tool.yml", expectedHits: nil},
+		{fixture: "clean_base_checkout.yml", expectedHits: nil},
+		{fixture: "clean_push.yml", expectedHits: nil},
+		{fixture: "clean_tool_before_head_checkout.yml", expectedHits: nil},
+		{fixture: "clean_fork_guard.yml", expectedHits: nil},
+	}
+
+	engine := opaengine.New()
+	if err := engine.LoadFromFS(policies.FS); err != nil {
+		t.Fatalf("load embedded policies: %v", err)
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.fixture, func(t *testing.T) {
+			tmp := t.TempDir()
+			wfDir := filepath.Join(tmp, ".github", "workflows")
+			if err := os.MkdirAll(wfDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			src := filepath.Join("testdata", "ISSUE-414", "github", tc.fixture)
+			data, err := os.ReadFile(src)
+			if err != nil {
+				t.Fatalf("read fixture: %v", err)
+			}
+			if err := os.WriteFile(filepath.Join(wfDir, tc.fixture), data, 0o644); err != nil {
+				t.Fatal(err)
+			}
+
+			pipeline, _, err := collector.ScanGitHubWorkflows("owner/repo", "main", tmp, "", false)
+			if err != nil {
+				t.Fatalf("scan: %v", err)
+			}
+
+			findings, err := engine.Evaluate(context.Background(), pipeline, nil)
+			if err != nil {
+				t.Fatalf("evaluate: %v", err)
+			}
+
+			hits := make([]string, 0, len(findings))
+			for _, f := range findings {
+				if f.Code != "ISSUE-414" {
+					continue
+				}
+				hits = append(hits, f.Job)
+			}
+			sort.Strings(hits)
+			expected := append([]string(nil), tc.expectedHits...)
+			sort.Strings(expected)
+			if !stringSlicesEqual(hits, expected) {
+				t.Fatalf("%s: expected %v, got %v", tc.fixture, expected, hits)
+			}
+		})
+	}
+}

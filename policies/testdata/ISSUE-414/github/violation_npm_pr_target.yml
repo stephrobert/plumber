@@ -1,0 +1,12 @@
+# VIOLATION: pull_request_target checks out the PR head ref, then runs
+# npm test — the fork's package.json lifecycle scripts execute with secrets.
+name: Validate PR
+on: pull_request_target
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - run: npm test

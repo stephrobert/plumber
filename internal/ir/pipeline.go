@@ -98,10 +98,10 @@ type DependabotConfig struct {
 
 // Job is a single pipeline unit of work.
 type Job struct {
-	Name         string            `json:"name"`
-	Image        *Image            `json:"image,omitempty"`
-	Services     []Image           `json:"services,omitempty"`
-	Scripts      []string          `json:"scripts,omitempty"`
+	Name     string   `json:"name"`
+	Image    *Image   `json:"image,omitempty"`
+	Services []Image  `json:"services,omitempty"`
+	Scripts  []string `json:"scripts,omitempty"`
 	// ScriptBlocks names the source block ("before_script", "script",
 	// "after_script") for each entry of Scripts, in the same order.
 	// Lets script-scanning policies surface where the offending line
@@ -128,10 +128,10 @@ type Job struct {
 	// about effective execution (security-job weakening) read this
 	// list and reject any rule whose terminal `when` would prevent
 	// the job from running.
-	Rules []map[string]any `json:"rules,omitempty"`
-	OriginFile   string            `json:"originFile,omitempty"`
-	OriginLine   int               `json:"originLine,omitempty"`
-	OriginKind   string            `json:"originKind,omitempty"`
+	Rules      []map[string]any `json:"rules,omitempty"`
+	OriginFile string           `json:"originFile,omitempty"`
+	OriginLine int              `json:"originLine,omitempty"`
+	OriginKind string           `json:"originKind,omitempty"`
 	// Overridden is true when the job inherits from an upstream
 	// component or template but the project locally redefined some of
 	// its keys. Lets policies distinguish "user-authored override" from
@@ -167,6 +167,14 @@ type Job struct {
 	// external code through `include:` instead (already covered by the
 	// pipeline Includes list).
 	Uses []Action `json:"uses,omitempty"`
+
+	// Steps is the job's steps in source order — both `uses:` and `run:`
+	// entries interleaved. Uses (actions only) and Scripts (run bodies
+	// only) each lose the relative ordering; Steps preserves it, which
+	// taint-style policies need to tell whether a tool runs before or
+	// after an untrusted checkout. Currently populated by the GitHub
+	// Actions collector only.
+	Steps []Step `json:"steps,omitempty"`
 
 	// ReusableWorkflowUses is the `uses:` declared at the job level (not
 	// the step level). Populated only for GitHub Actions jobs that are
@@ -252,6 +260,27 @@ type ActionMetadata struct {
 	Advisories       []string `json:"advisories,omitempty"`
 }
 
+// Step kinds.
+const (
+	StepKindUses = "uses"
+	StepKindRun  = "run"
+)
+
+// Step is a single ordered step of a Job. Kind is StepKindUses (an action
+// invocation) or StepKindRun (a shell script).
+type Step struct {
+	Kind string `json:"kind"`
+	// Uses is the action ref for a "uses" step (e.g. "actions/checkout@v4").
+	Uses string `json:"uses,omitempty"`
+	// With is the `with:` input map for a "uses" step.
+	With map[string]any `json:"with,omitempty"`
+	// Run is the shell script body for a "run" step.
+	Run string `json:"run,omitempty"`
+	// LotpTools lists the Living Off The Pipeline catalog tools invoked in a
+	// "run" step's script. Populated by the collector; empty otherwise.
+	LotpTools []string `json:"lotpTools,omitempty"`
+}
+
 // Image references a container image (job image, service, step base).
 // CredentialsPassword carries the literal value of the image's
 // `credentials.password` field (GitHub Actions `jobs.*.container` and
@@ -276,14 +305,14 @@ type Image struct {
 // behaviour was overridden locally with one of the CI/CD keys that
 // meaningfully change semantics (script, image, rules, …).
 type Include struct {
-	Kind           string          `json:"kind"`
-	Source         string          `json:"source"`
-	Ref            string          `json:"ref,omitempty"`
-	Current        string          `json:"current,omitempty"`
-	Path           string          `json:"path,omitempty"`
-	AltPath        string          `json:"altPath,omitempty"`
-	Nested         bool            `json:"nested,omitempty"`
-	ComponentName  string          `json:"componentName,omitempty"`
+	Kind          string `json:"kind"`
+	Source        string `json:"source"`
+	Ref           string `json:"ref,omitempty"`
+	Current       string `json:"current,omitempty"`
+	Path          string `json:"path,omitempty"`
+	AltPath       string `json:"altPath,omitempty"`
+	Nested        bool   `json:"nested,omitempty"`
+	ComponentName string `json:"componentName,omitempty"`
 	// OriginHash is a stable identifier for the origin of this
 	// include, used by external tooling to deduplicate the same
 	// upstream source across pipelines.
