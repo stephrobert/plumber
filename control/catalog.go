@@ -184,6 +184,11 @@ func GitHubControls(pc *configuration.PlumberConfig) []ControlEntry {
 		Skipped:     c.WorkflowMustNotUseDangerousTriggers == nil || !c.WorkflowMustNotUseDangerousTriggers.IsEnabled(),
 	})
 	entries = append(entries, ControlEntry{
+		DisplayName: "Pipeline must not run RCE tools on untrusted code",
+		ControlName: "pipelineMustNotRunRceToolsOnUntrustedCode",
+		Skipped:     c.PipelineMustNotRunRceToolsOnUntrustedCode == nil || !c.PipelineMustNotRunRceToolsOnUntrustedCode.IsEnabled(),
+	})
+	entries = append(entries, ControlEntry{
 		DisplayName: "Workflows must declare permissions",
 		ControlName: "workflowsMustDeclarePermissions",
 		Skipped:     c.WorkflowsMustDeclarePermissions == nil || !c.WorkflowsMustDeclarePermissions.IsEnabled(),
@@ -308,6 +313,9 @@ func DisabledControlNames(c *configuration.ControlsConfig) map[string]bool {
 	}
 	if cfg := c.WorkflowMustNotUseDangerousTriggers; cfg == nil || !cfg.IsEnabled() {
 		out["workflowMustNotUseDangerousTriggers"] = true
+	}
+	if cfg := c.PipelineMustNotRunRceToolsOnUntrustedCode; cfg == nil || !cfg.IsEnabled() {
+		out["pipelineMustNotRunRceToolsOnUntrustedCode"] = true
 	}
 	if cfg := c.WorkflowsMustDeclarePermissions; cfg == nil || !cfg.IsEnabled() {
 		out["workflowsMustDeclarePermissions"] = true

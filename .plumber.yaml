@@ -669,6 +669,18 @@ github:
       enabled: true
 
     # ===========================================
+    # Pipeline must not run RCE tools on untrusted code
+    # ===========================================
+    # Living Off The Pipeline: flags a job reachable from a privileged
+    # trigger (pull_request_target / workflow_run) that checks out the
+    # PR head and then runs a developer tool with RCE-by-design
+    # behaviour (eslint, npm, make, gradle, pip, pytest, ...). Such a
+    # tool executes attacker-controlled repository files with base-repo
+    # secrets in scope.
+    pipelineMustNotRunRceToolsOnUntrustedCode:
+      enabled: true
+
+    # ===========================================
     # Workflows must declare permissions
     # ===========================================
     # Workflows without an explicit `permissions:` block fall back to

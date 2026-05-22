@@ -159,10 +159,6 @@ var benchedControls = map[string]map[string]struct{}{
 		"workflowsMustDeclareConcurrency":                 {},
 		"workflowsMustHaveExplicitName":                   {},
 
-		// LOTP catalog control — new; GitLab side and output wiring
-		// still pending (issue #189).
-		"pipelineMustNotRunRceToolsOnUntrustedCode": {},
-
 		// Cross-provider controls whose GitHub side needs collector
 		// or test work before it ships. They continue to fire
 		// findings on GitLab — they're only benched on GitHub.

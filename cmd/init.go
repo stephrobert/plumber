@@ -46,6 +46,7 @@ const (
 	compArchivedActions     = "Flag third-party actions from archived repositories"
 	compKnownCVEs           = "Flag third-party actions with known CVEs (GitHub Advisory DB)"
 	compDebugTraceGitHub    = "Flag Actions debug logging (ACTIONS_STEP_DEBUG / ACTIONS_RUNNER_DEBUG)"
+	compLotpUntrusted       = "Flag RCE-by-design tools running on untrusted code (Living Off The Pipeline)"
 )
 
 var (
@@ -696,6 +697,7 @@ func compositionOptionsForProviders(providers []string) []string {
 		out = append(out,
 			compActionPin,
 			compDangerousTriggers,
+			compLotpUntrusted,
 			compDeclarePermissions,
 			compReusableSecrets,
 			compTemplateInjection,
@@ -1120,6 +1122,9 @@ func (st *initWizardState) toPlumberConfig() *configuration.PlumberConfig {
 			if compSelected(st, compDangerousTriggers) {
 				githubSection.Controls.WorkflowMustNotUseDangerousTriggers = &configuration.EnabledOnlyControlConfig{Enabled: boolPtrInit(true)}
 			}
+			if compSelected(st, compLotpUntrusted) {
+				githubSection.Controls.PipelineMustNotRunRceToolsOnUntrustedCode = &configuration.EnabledOnlyControlConfig{Enabled: boolPtrInit(true)}
+			}
 			if compSelected(st, compDeclarePermissions) {
 				githubSection.Controls.WorkflowsMustDeclarePermissions = &configuration.EnabledOnlyControlConfig{Enabled: boolPtrInit(true)}
 			}
@@ -1236,8 +1241,8 @@ func starterPlumberConfig() *configuration.PlumberConfig {
 		TrustedURLsText:        strings.Join(defaultTrustedURLs(), "\n"),
 		CompositionChoices: []string{
 			compHardcoded, compUpToDate, compForbidden, compSecurity, compScripts, compJobVars, compDinD,
-			compActionPin, compDangerousTriggers, compDeclarePermissions, compReusableSecrets, compTemplateInjection,
-			compWriteAllPerms, compArchivedActions, compKnownCVEs, compDebugTraceGitHub,
+			compActionPin, compDangerousTriggers, compLotpUntrusted, compDeclarePermissions, compReusableSecrets,
+			compTemplateInjection, compWriteAllPerms, compArchivedActions, compKnownCVEs, compDebugTraceGitHub,
 		},
 		ActionPinTrustedOwnersMultiline:        strings.Join(defaultGitHubTrustedActionOwners(), "\n"),
 		SecurityJobPatternsGitHubMultiline:     strings.Join(defaultGitHubSecurityJobPatterns(), "\n"),
